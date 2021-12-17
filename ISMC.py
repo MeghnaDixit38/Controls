@@ -1,28 +1,7 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
 import numpy as np
 from matplotlib import pyplot as plt
 import math
 from mpl_toolkits import mplot3d
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[2]:
 
 
 def R_eta(phi, theta, psi):
@@ -56,39 +35,12 @@ def R_T(phi, theta):
     return t
 
 
-# In[3]:
-
-
 np.linalg.inv(R_eta(0, 0, 0))
-
-
-# In[4]:
-
-
-R_eta(0, 0, 0).transpose()
-
-
-# In[5]:
-
-
-np.linalg.det(R_eta(0, 0, 0))
-
-
-# In[6]:
 
 
 def eta_dot(phi, theta, p, q, r ):
     print(np.linalg.inv(R_T(phi, theta)), zeta(p, q, r))
     return np.dot(np.linalg.inv(R_T(phi, theta)),zeta(p, q, r))
-
-
-# In[7]:
-
-
-eta_dot(0,0,1,1,1)
-
-
-# In[8]:
 
 
 def f_2(v_x, v_y, v_z):
@@ -97,33 +49,12 @@ def f_2(v_x, v_y, v_z):
 def S_zeta(p,q,r):
     return np.array([[0,-r,q],[r,0,-p],[-q,p,0]])
 
-
-# In[9]:
-
-
 def p_des(t):
     p_d = np.array([(1+t)*math.cos(0.5*t),(4+0.1*t)*math.sin(0.5*t),1+0.5*t])
     return p_d.transpose()
 # Initial Conditions
-p_in = np.array([0,0,0])
-v_in = np.array([0,0,0])
 
-
-# In[10]:
-
-
-n=10
-e_0 = np.zeros((6,n))
-print(e_0)
-
-
-# In[ ]:
-
-
-
-
-
-# In[11]:
+---------------------------------
 
 
 class des:
@@ -196,7 +127,6 @@ class des:
         self.z_ddot_path = z_ddot_path
 
 
-# In[13]:
 
 
 class smc:
@@ -254,17 +184,6 @@ class smc:
             
         
         
-        
-        
-
-
-# In[ ]:
-
-
-
-
-
-# In[14]:
 
 
 if __name__ == "__main__":
@@ -300,21 +219,12 @@ if __name__ == "__main__":
     
 
 
-# In[ ]:
-
-
-
-
-
-# In[15]:
-
 
 fig = plt.figure();
 ax = plt.axes(projection = '3d');
 ax.plot3D(x_des, y_des, z_des, linestyle = '-.', marker = '.', color = 'red');
 
 
-# In[ ]:
 
 
 
