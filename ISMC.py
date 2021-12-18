@@ -155,9 +155,9 @@ class smc:
         total_time = 20.0
         dt = 0.01
         iter = int(total_time/dt)
-        p_e = np.zeros((iter,3))
-        v_e = np.zeros((iter,3))
-        s_0 = np.zeros((iter,3))
+        p_e = np.zeros((3,iter))
+        v_e = np.zeros((3,iter))
+        s_0 = np.zeros((3,iter))
         
         p_e[:,0] = self.p_d - self.p
         v_e[:,0] = self.p_dot_d - self.p_dot
@@ -166,7 +166,7 @@ class smc:
         t_arr = np.linspace(0.0, total_time, iter)
 
         # Numerical Integration
-        for i in range(iter):
+        for i in range(iter-1):
             p_e[:,i+1] = p_e[:,i] + v_e[:,i]*self.dt
             v_e[:,i+1] = v_e[:,i] + self.dt*(self.p_ddot_d - self.p_dot)
             s_0[:,i+1] = s_0[:,i] + (self.alpha_1*p_e[:,i] + self.alpha_2*v_e[:,i])*self.dt + (v_e[:,i+1] - v_e[:i])
