@@ -82,6 +82,7 @@ class des:
         dt = 0.01
         self.dt = dt
         iter = int(total_time/dt)
+        self.iter = iter
         t_arr = np.linspace(0.0, total_time, iter)
         
         x_path = []
@@ -141,7 +142,7 @@ class smc:
         self.d_p = d_p
         self.dt=dt
     
-    def controller(self, p, p_dot, p_d, p_dot_d, p_ddot_d, psi_d):
+    def controller(self, p, p_dot, p_ddot, p_d, p_dot_d, p_ddot_d, psi_d, p_e, v_e, s_0):
         
         self.p = p
         self.p_dot = p_dot
@@ -151,38 +152,28 @@ class smc:
         self.p_dot_d = p_dot_d
         self.p_ddot_d = p_ddot_d
         self.psi_d = psi_d
-        
-        total_time = 20.0
-        dt = 0.01
-        iter = int(total_time/dt)
-        p_e = np.zeros((3,iter))
-        v_e = np.zeros((3,iter))
-        s_0 = np.zeros((3,iter))
-        
-        p_e[:,0] = self.p_d - self.p
-        v_e[:,0] = self.p_dot_d - self.p_dot
-        s_0[:,0] = 0
-        
-        t_arr = np.linspace(0.0, total_time, iter)
 
         # Numerical Integration
-        for i in range(iter-1):
-            p_e[:,i+1] = p_e[:,i] + v_e[:,i]*self.dt
-            v_e[:,i+1] = v_e[:,i] + self.dt*(self.p_ddot_d - self.p_dot)
-            s_0[:,i+1] = s_0[:,i] + (self.alpha_1*p_e[:,i] + self.alpha_2*v_e[:,i])*self.dt + (v_e[:,i+1] - v_e[:i])
+        p_e[:,i+1] = p_e[:,i] + v_e[:,i]*self.dt
+        v_e[:,i+1] = v_e[:,i] + (self.p_ddot_d - self.p_ddot)*self.dt
+        s_0[:,i+1] = s_0[:,i] + (self.alpha_1*p_e[:,i] + self.alpha_2*v_e[:,i])*self.dt + (v_e[:,i+1] - v_e[:i])
             
-        E = self.alpha_1*p_e[:,iter] + self.alpha_2*v_e[:,iter] + self.p_ddot_d + self.g[2] + np.dot(self.d_p,self.p_dot)/self.m
-        E_hat = E + beta[0]*np.sign(s_0[:,iter])
+        E = self.alpha_1*p_e[:,i+1] + self.alpha_2*v_e[:,i+1] + self.p_ddot_d - self.g + np.dot(self.d_p,self.p_dot)/self.m
+        E_hat = E + beta[0]*np.sign(s_0[:,i+1])
             
         phi_d = np.arcsin((E_hat[0]*np.sin(self.psi_d) - E_hat[1]*np.cos(self.psi_d))/np.linalg.norm(E_hat, 2))
         theta_d = np.arctan((E_hat[0]*np.cos(self.psi_d) + E_hat[1]*np.sin(self.psi_d))/E_hat[2])
-        u_t = np.dot(R_eta(phi_d,theta_d,self.psi_d).transpose(), E_hat)
-            
+        u_T = np.dot((np.array([np.cos(phi_d)*np.cos(self.psi_d)*np.sin(theta_d) + np.sin(self.psi_d)*np.sin(phi_d), np.sin(theta_d)*np.sin(self.psi_d)*np.cos(phi_d) - np.cos(self.psi_d)*np.sin(phi_d), np.cos(phi_d)*np.cos(theta_d)])).transpose(), E_hat)
+        
+        self.E_hat = E_hat
+        
         self.update()
             
-        #def update(self):
-            
+    def update(self):
         
+        self.p_ddot = self.E_hat
+        self.p_dot += self.E_hat*self.dt
+        self.p += self.p_dot*self.dt
         
 
 
@@ -216,13 +207,35 @@ if __name__ == "__main__":
     z_ddot_des = Des.z_ddot_path
     
     dt = Des.dt
+    iter = Des.iter
     
+    Smc = smc(m, alpha_1, alpha_2, beta, d_p, dt)
+    
+    p = np.array([0, 0, 0]).transpose()
+    p_dot = np.array([0, 0, 0]).transpose()
+    p_ddot = np.array([0, 0, 0]).transpose()
+    psi = 0
+    
+    p_e = np.zeros((3,iter+1))
+    v_e = np.zeros((3,iter+1))
+    s_0 = np.zeros((3,iter+1))
+        
+    p_e[:,0] = self.p_d - self.p
+    v_e[:,0] = self.p_dot_d - self.p_dot
+    s_0[:,0] = 0
+    
+    for i in range(iter+1)
+        
+        p_d = np.array([x_des[i], y_des[i], z_des[i]])
+        p_dot_d = np.array([x_dot_des[i], y_dot_des[i], z_dot_des[i]])
+        p_ddot_d = np.array([x_ddot_des[i], y_ddot_des[i], z_ddot_des[i])
+        
+        Smc.controller(p, p_dot, p_ddot, p_d, p_dot_d, p_ddot_d, psi_d, p_e, v_e, s_0)
 
 
-
-fig = plt.figure();
-ax = plt.axes(projection = '3d');
-ax.plot3D(x_des, y_des, z_des, linestyle = '-.', marker = '.', color = 'red');
+    fig = plt.figure()
+    ax = plt.axes(projection = '3d')
+    ax.plot3D(x_des, y_des, z_des, linestyle = '-.', marker = '.', color = 'red')
 
 
 
