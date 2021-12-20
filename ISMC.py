@@ -54,7 +54,7 @@ def p_des(t):
     return p_d.transpose()
 # Initial Conditions
 
----------------------------------
+
 
 
 class des:
@@ -146,6 +146,7 @@ class smc:
         
         self.p = p
         self.p_dot = p_dot
+        self.p_ddot = p_ddot
         
         #Desired
         self.p_d = p_d
@@ -154,12 +155,16 @@ class smc:
         self.psi_d = psi_d
 
         # Numerical Integration
-        p_e[:,i+1] = p_e[:,i] + v_e[:,i]*self.dt
-        v_e[:,i+1] = v_e[:,i] + (self.p_ddot_d - self.p_ddot)*self.dt
-        s_0[:,i+1] = s_0[:,i] + (self.alpha_1*p_e[:,i] + self.alpha_2*v_e[:,i])*self.dt + (v_e[:,i+1] - v_e[:i])
+        p_e_u = p_e + v_e*self.dt
+        v_e_u = v_e + (self.p_ddot_d - self.p_ddot)*self.dt
+        s_0_u = s_0 + (self.alpha_1*p_e + self.alpha_2*v_e)*self.dt + (v_e_u - v_e)
+
+        self.p_e_u = p_e_u
+        self.v_e_u = v_e_u
+        self.s_0_u = s_0_u
             
-        E = self.alpha_1*p_e[:,i+1] + self.alpha_2*v_e[:,i+1] + self.p_ddot_d - self.g + np.dot(self.d_p,self.p_dot)/self.m
-        E_hat = E + beta[0]*np.sign(s_0[:,i+1])
+        E = self.alpha_1*p_e_u + self.alpha_2*v_e_u + self.p_ddot_d - self.g + np.dot(self.d_p,self.p_dot)/self.m
+        E_hat = E + beta[0]*np.sign(s_0_u)
             
         phi_d = np.arcsin((E_hat[0]*np.sin(self.psi_d) - E_hat[1]*np.cos(self.psi_d))/np.linalg.norm(E_hat, 2))
         theta_d = np.arctan((E_hat[0]*np.cos(self.psi_d) + E_hat[1]*np.sin(self.psi_d))/E_hat[2])
@@ -172,8 +177,8 @@ class smc:
     def update(self):
         
         self.p_ddot = self.E_hat
-        self.p_dot += self.E_hat*self.dt
-        self.p += self.p_dot*self.dt
+        self.p_dot = self.p_dot + self.E_hat*self.dt
+        self.p = self.p + self.p_dot*self.dt
         
 
 
@@ -215,30 +220,52 @@ if __name__ == "__main__":
     p_dot = np.array([0, 0, 0]).transpose()
     p_ddot = np.array([0, 0, 0]).transpose()
     psi = 0
+
+    x_path = [p[0]]
+    y_path = [p[1]]
+    z_path = [p[2]]
+    psi_path = [psi]
     
     p_e = np.zeros((3,iter+1))
     v_e = np.zeros((3,iter+1))
     s_0 = np.zeros((3,iter+1))
         
-    p_e[:,0] = self.p_d - self.p
-    v_e[:,0] = self.p_dot_d - self.p_dot
+    p_e[:,0] = np.array([x_des[0], y_des[0], z_des[0]]).transpose() - p
+    v_e[:,0] = np.array([x_dot_des[0], y_dot_des[0], z_dot_des[0]]).transpose() - p_dot
     s_0[:,0] = 0
     
-    for i in range(iter+1)
+    for i in range(iter):
         
-        p_d = np.array([x_des[i], y_des[i], z_des[i]])
-        p_dot_d = np.array([x_dot_des[i], y_dot_des[i], z_dot_des[i]])
-        p_ddot_d = np.array([x_ddot_des[i], y_ddot_des[i], z_ddot_des[i])
+        p_d = np.array([x_des[i], y_des[i], z_des[i]]).transpose()
+        p_dot_d = np.array([x_dot_des[i], y_dot_des[i], z_dot_des[i]]).transpose()
+        p_ddot_d = np.array([x_ddot_des[i], y_ddot_des[i], z_ddot_des[i]]).transpose()
+        psi_d = 0
         
-        Smc.controller(p, p_dot, p_ddot, p_d, p_dot_d, p_ddot_d, psi_d, p_e, v_e, s_0)
+        Smc.controller(p, p_dot, p_ddot, p_d, p_dot_d, p_ddot_d, psi_d, p_e[:,i], v_e[:,i], s_0[:,i])
+
+        p = np.copy(Smc.p)
+        p_dot = np.copy(Smc.p_dot)
+        p_ddot = np.copy(Smc.p_ddot)
+
+        x_path.append(p[0])
+        y_path.append(p[1])
+        z_path.append(p[2])
+
+        p_e[:,i+1] = np.copy(Smc.p_e_u)
+        v_e[:,i+1] = np.copy(Smc.v_e_u)
+        s_0[:,i+1] = np.copy(Smc.s_0_u)
 
 
     fig = plt.figure()
     ax = plt.axes(projection = '3d')
     ax.plot3D(x_des, y_des, z_des, linestyle = '-.', marker = '.', color = 'red')
+    ax.plot3D(x_path, y_path, z_path, linestyle = '-', color = 'blue')
+    
+    ax.set_title('Flight path').set_fontsize(20)
+    ax.set_xlabel('$x$').set_fontsize(20)
+    ax.set_ylabel('$y$').set_fontsize(20)
+    ax.set_zlabel('$z$').set_fontsize(20)
+    plt.legend(['Planned path','Executed path'], fontsize = 14)
 
-
-
-
-
-
+    plt.show()
+    
