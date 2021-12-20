@@ -35,9 +35,6 @@ def R_T(phi, theta):
     return t
 
 
-np.linalg.inv(R_eta(0, 0, 0))
-
-
 def eta_dot(phi, theta, p, q, r ):
     print(np.linalg.inv(R_T(phi, theta)), zeta(p, q, r))
     return np.dot(np.linalg.inv(R_T(phi, theta)),zeta(p, q, r))
