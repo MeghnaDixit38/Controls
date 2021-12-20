@@ -173,7 +173,7 @@ class smc:
             
     def update(self):
         
-        self.p_ddot = self.E_hat + self.g
+        self.p_ddot = self.E_hat + self.g - np.dot(self.d_p,self.p_dot)/self.m      #+ external disturbance force
         self.p_dot = self.p_dot + self.p_ddot*self.dt
         self.p = self.p + self.p_dot*self.dt
         
@@ -236,7 +236,7 @@ if __name__ == "__main__":
         p_d = np.array([x_des[i], y_des[i], z_des[i]]).transpose()
         p_dot_d = np.array([x_dot_des[i], y_dot_des[i], z_dot_des[i]]).transpose()
         p_ddot_d = np.array([x_ddot_des[i], y_ddot_des[i], z_ddot_des[i]]).transpose()
-        psi_d = 0
+        psi_d = np.arctan2(p_dot_d[1],p_dot_d[0])
         
         Smc.controller(p, p_dot, p_ddot, p_d, p_dot_d, p_ddot_d, psi_d, p_e[:,i], v_e[:,i], s_0[:,i])
 
