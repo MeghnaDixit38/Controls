@@ -140,7 +140,7 @@ class smc:
         self.alpha_2 = alpha_2
         self.beta=beta
         self.d_p = d_p
-        self.dt=dt
+        self.dt = dt
     
     def controller(self, p, p_dot, p_ddot, p_d, p_dot_d, p_ddot_d, psi_d, p_e, v_e, s_0):
         
@@ -176,8 +176,8 @@ class smc:
             
     def update(self):
         
-        self.p_ddot = self.E_hat
-        self.p_dot = self.p_dot + self.E_hat*self.dt
+        self.p_ddot = self.E_hat + self.g
+        self.p_dot = self.p_dot + self.p_ddot*self.dt
         self.p = self.p + self.p_dot*self.dt
         
 
@@ -232,7 +232,7 @@ if __name__ == "__main__":
         
     p_e[:,0] = np.array([x_des[0], y_des[0], z_des[0]]).transpose() - p
     v_e[:,0] = np.array([x_dot_des[0], y_dot_des[0], z_dot_des[0]]).transpose() - p_dot
-    s_0[:,0] = 0
+    s_0[:,0] = alpha_2*p_e[:,0] + v_e[:,0]
     
     for i in range(iter):
         
